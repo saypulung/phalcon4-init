@@ -1,0 +1,56 @@
+version: "3.7"
+
+services:
+
+  db:
+    image: mariadb
+    container_name: "phalcon_db"
+    environment:
+      MYSQL_DATABASE: 'mydb'
+      MYSQL_ROOT_PASSWORD: 'w3dooshGununk'
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  web:
+    build: .
+    working_dir: /var/www/myapp
+    container_name: "phalcon_web"
+    ports:
+      - 80:80
+    volumes:
+      - ./www:/var/www/myapp
+      - ./.docker/apache2-www.conf:/etc/apache2/sites-enabled/000-default.conf
+      - ./.docker/php.ini:/usr/local/etc/php/php.ini
+      - ./.docker/pma-config.inc.php:/var/www/phpmyadmin/config.inc.php
+    depends_on:
+      - memcached
+      - db
+      - mailpit
+    links:
+      - 'db:db'
+      - 'memcached:memcached'
+      - 'mailpit:mailpit'
+
+  memcached:
+    image: memcached:latest
+    container_name: "phalcon_cache"
+    ports:
+      - "11211:11211"
+    expose:
+      - 11211
+  
+  mailpit:
+    image: axllent/mailpit
+    container_name: "phalcon_mailpit"
+    restart: always
+    ports:
+      - "8025:8025"
+    expose:
+      - 8025
+
+volumes:
+  mariadb_data:
